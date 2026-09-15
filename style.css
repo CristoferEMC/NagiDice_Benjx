@@ -7,8 +7,8 @@
   /* Color Palette Tokens */
   --color-red: #ff0d00;
   --color-blue: #002fff;
-  --color-green: #34c759;
-  --color-purple: #af52de;
+  --color-green: #00e031;
+  --color-purple: #aa00ff;
   --color-yellow: #ffee00;
   --color-black: #000000;
   --color-white: #ffffff;
@@ -918,7 +918,7 @@ body::after {
 }
 
 .c-red {
-  color: #ff6b64;
+  color: #ff0d00;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -933,7 +933,7 @@ body::after {
 }
 
 .c-purple {
-  color: #d57eff;
+  color: #aa00ff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 

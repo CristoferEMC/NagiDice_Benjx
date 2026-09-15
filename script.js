@@ -3,10 +3,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Color configuration dictionary
   const COLOR_DATA = {
-    red: { name: 'Rojo', hex: '#ff3b30', class: 'c-red', dotColor: '#ffffff' },
-    blue: { name: 'Azul', hex: '#0011ffff', class: 'c-blue', dotColor: '#ffffff' },
-    green: { name: 'Verde', hex: '#34c759', class: 'c-green', dotColor: '#ffffff' },
-    purple: { name: 'Morado', hex: '#af52de', class: 'c-purple', dotColor: '#ffffff' },
+    red: { name: 'Rojo', hex: '#ff0d00ff', class: 'c-red', dotColor: '#ffffff' },
+    blue: { name: 'Azul', hex: '#0010f0ff', class: 'c-blue', dotColor: '#ffffff' },
+    green: { name: 'Verde', hex: '#00c030ff', class: 'c-green', dotColor: '#ffffff' },
+    purple: { name: 'Morado', hex: '#aa00ffff', class: 'c-purple', dotColor: '#ffffff' },
     yellow: { name: 'Amarillo', hex: '#ffee00ff', class: 'c-yellow', dotColor: '#ffffff' },
     black: { name: 'Negro', hex: '#000000ff', class: 'c-black', dotColor: '#ffffff' },
     white: { name: 'Blanco', hex: '#ffffff', class: 'c-white', dotColor: '#1e293b' }
@@ -287,20 +287,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function getRandomActiveColor() {
-    const pool = getCheckedColors();
-    if (pool.length === 0) {
-      const allColors = Object.keys(COLOR_DATA);
-      return allColors[Math.floor(Math.random() * allColors.length)];
+  function getWeightedRandomColor(pool, rollTempCounts = {}) {
+    const activePool = pool.length > 0 ? pool : Object.keys(COLOR_DATA);
+
+    // Count appearances of each active color in recent rollHistory
+    const historyCounts = {};
+    activePool.forEach(color => {
+      historyCounts[color] = 0;
+    });
+
+    rollHistory.forEach(entry => {
+      if (entry.items && Array.isArray(entry.items)) {
+        entry.items.forEach(d => {
+          if (historyCounts[d.color] !== undefined) {
+            historyCounts[d.color]++;
+          }
+        });
+      }
+    });
+
+    // Calculate weight combining history inverse frequency AND current-roll duplicate penalty
+    const weights = activePool.map(color => {
+      const hCount = historyCounts[color];
+      const baseWeight = 1 / Math.pow(hCount + 1, 1.2);
+
+      // Duplicate penalty in current roll: 0.15 multiplier for each time color was already picked in this roll
+      const rCount = rollTempCounts[color] || 0;
+      const rollPenalty = Math.pow(0.20, rCount);
+
+      return {
+        color: color,
+        weight: baseWeight * rollPenalty
+      };
+    });
+
+    const totalWeight = weights.reduce((sum, item) => sum + item.weight, 0);
+
+    let randomNum = Math.random() * totalWeight;
+    for (let i = 0; i < weights.length; i++) {
+      if (randomNum < weights[i].weight) {
+        return weights[i].color;
+      }
+      randomNum -= weights[i].weight;
     }
-    return pool[Math.floor(Math.random() * pool.length)];
+
+    return weights[weights.length - 1].color;
   }
 
   function generateDiceRollData() {
     const count = parseInt(diceCountSelect.value, 10);
+    const pool = getCheckedColors();
     const result = [];
+    const rollTempCounts = {};
+
     for (let i = 0; i < count; i++) {
-      result.push({ color: getRandomActiveColor() });
+      const chosenColor = getWeightedRandomColor(pool, rollTempCounts);
+      result.push({ color: chosenColor });
+      rollTempCounts[chosenColor] = (rollTempCounts[chosenColor] || 0) + 1;
     }
     return result;
   }
